@@ -1,0 +1,11 @@
+# Ignore Streamlit Secrets
+.streamlit/
+
+# Ignore local database files (to prevent leaking emails/hashes)
+*.csv
+*.json
+doodles_users.json
+
+# Ignore Python cache
+__pycache__/
+*.pyc
