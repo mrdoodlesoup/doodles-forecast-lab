@@ -156,7 +156,7 @@ if st.session_state['authenticated_user'] is None:
                 with st.expander("📜 Read Terms of Service"):
                     st.markdown("""
                     * **1. Life Safety & Liability:** Doodles' Forecast Lab is an experimental forecasting tool, not an official government warning system. You are 100% responsible for your own safety, navigation, and decisions while storm chasing. Do not use this as a replacement for the National Weather Service.
-                    * **2. Sharing & Intellectual Property:** You are encouraged to share screenshots of your forecasts! Please use the "Hide Overlays for Image" button to ensure the Doodles' Weather Updates watermark is visible on your posts.
+                    * **2. Sharing & Intellectual Property:** You are encouraged to share screenshots of your forecasts! Please use the "Hide Overlays for Image" button to ensure the Doodles' Forecast Lab watermark is visible on your posts.
                     * **3. Account Conduct:** Keep it professional. Do not share your password or abuse the lab's resources. We reserve the right to ban or delete accounts for unprofessional behavior or security violations.
                     * **4. Privacy & Data:** Your password is cryptographically secured. We will never sell your personal data—mostly because the creator is genuinely not smart enough to figure out how to sell email addresses even if he wanted to.
                     * **5. Support the Lab:** Stay weather aware, and be sure to follow **Doodles' Weather Updates** on Facebook and YouTube!
@@ -282,7 +282,7 @@ if st.session_state['authenticated_user'] is None:
             with st.form("tos_form"):
                 st.info("""
                 * **1. Life Safety & Liability:** Doodles' Forecast Lab is an experimental forecasting tool, not an official government warning system. You are 100% responsible for your own safety, navigation, and decisions while storm chasing. Do not use this as a replacement for the National Weather Service.
-                * **2. Sharing & Intellectual Property:** You are encouraged to share screenshots of your forecasts! Please use the "Hide Overlays for Image" button to ensure the Doodles' Weather Updates watermark is visible on your posts.
+                * **2. Sharing & Intellectual Property:** You are encouraged to share screenshots of your forecasts! Please use the "Hide Overlays for Image" button to ensure the Doodles' Forecast Lab watermark is visible on your posts.
                 * **3. Account Conduct:** Keep it professional. Do not share your password or abuse the lab's resources. We reserve the right to ban or delete accounts for unprofessional behavior or security violations.
                 * **4. Privacy & Data:** Your password is cryptographically secured. We will never sell your personal data—mostly because the creator is genuinely not smart enough to figure out how to sell email addresses even if he wanted to.
                 * **5. Support the Lab:** Stay weather aware, and be sure to follow **Doodles' Weather Updates** on Facebook and YouTube!
@@ -588,20 +588,22 @@ def evaluate_outlook(hazard_layers, f_df, c_tracks, t_hazard, src_type):
     return results, observed_polygon
 
 def apply_overlay_hide(m):
+    # 1. PERMANENT WATERMARK (Always added, never hidden)
+    watermark_html = '''
+        <div style="position: absolute; bottom: 30px; right: 30px; z-index: 9999;
+        background: rgba(0, 32, 78, 0.7); backdrop-filter: blur(5px); 
+        padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.4);
+        color: white; font-family: 'Special Elite', monospace !important;
+        font-size: 18px; font-weight: bold; pointer-events: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+        🌩️ Doodles' Forecast Lab
+        </div>
+    '''
+    m.get_root().html.add_child(folium.Element(watermark_html))
+    
+    # 2. TOGGLE UI CONTROLS (Only hides zoom/draw buttons when toggled)
     if st.session_state.get('hide_overlays', False):
         hide_css = """<style>.leaflet-control-container { display: none !important; }</style>"""
         m.get_root().html.add_child(folium.Element(hide_css))
-        
-        watermark_html = '''
-            <div style="position: absolute; bottom: 30px; right: 30px; z-index: 9999;
-            background: rgba(0, 32, 78, 0.7); backdrop-filter: blur(5px); 
-            padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.4);
-            color: white; font-family: 'Special Elite', monospace !important;
-            font-size: 18px; font-weight: bold; pointer-events: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-            🌩️ Doodles' Weather Updates
-            </div>
-        '''
-        m.get_root().html.add_child(folium.Element(watermark_html))
 
 def build_map_legend(hazard_mode, active_bank_dict, verification_dots=""):
     hazard_upper = str(hazard_mode).upper()
@@ -636,7 +638,9 @@ def build_map_legend(hazard_mode, active_bank_dict, verification_dots=""):
 
 with tab_active:
     st.subheader("🖍️ Forecast Creation Canvas")
-    col_map, col_buttons = st.columns([5, 1])
+    
+    # --- THE FIX: BUMPER COLUMNS TO CONSTRAIN THE WIDTH ---
+    col_spacer_l, col_map, col_buttons, col_spacer_r = st.columns([1, 5, 1.5, 1])
 
     with col_map:
         m_create = folium.Map(location=map_center, zoom_start=zoom, tiles=None)
@@ -649,6 +653,7 @@ with tab_active:
             font-size: 18px; font-weight: bold; text-align: center; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
             {display_hazard_title} FORECAST VALID {valid_date_formatted}
             <br><span style='font-size: 13px; font-weight: normal; color: #cccccc;'>{custom_issue_str}</span>
+            <br><span style='font-size: 14px; color: #ffcc00; font-weight: bold;'>⚠️ EXPERIMENTAL AND NOT SPC ⚠️</span>
             </div>
         '''
         m_create.get_root().html.add_child(folium.Element(title_html))
@@ -664,6 +669,8 @@ with tab_active:
         apply_overlay_hide(m_create)
 
         map_signature = f"create_map_{st.session_state['map_key']}_{display_hazard_title}_{valid_date_formatted}_{map_theme}_{custom_issue_str}_{st.session_state['hide_overlays']}"
+        
+        # --- THE FIX: USE CONTAINER WIDTH RE-ENABLED ---
         output_create = st_folium(m_create, use_container_width=True, height=700, key=map_signature)
 
     with col_buttons:
@@ -768,7 +775,8 @@ with tab_verify:
         else:
             avg_csi, avg_pod, avg_far, avg_cal = 0, 0, 0, 0
 
-        col_map_v, col_right_v = st.columns([5, 1])
+        # --- THE FIX: BUMPER COLUMNS TO CONSTRAIN THE WIDTH ---
+        col_spacer_l_v, col_map_v, col_right_v, col_spacer_r_v = st.columns([1, 5, 1.5, 1])
 
         with col_map_v:
             m_verify = folium.Map(location=map_center, zoom_start=zoom, tiles=None)
@@ -781,6 +789,7 @@ with tab_verify:
                 font-size: 18px; font-weight: bold; text-align: center; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
                 VERIFYING {v_hazard} FORECAST VALID {valid_date_formatted}
                 <br><span style='font-size: 13px; font-weight: normal; color: #cccccc;'>{custom_issue_str}</span>
+                <br><span style='font-size: 14px; color: #ffcc00; font-weight: bold;'>⚠️ EXPERIMENTAL AND NOT SPC ⚠️</span>
                 </div>
             '''
             m_verify.get_root().html.add_child(folium.Element(title_html_v))
@@ -850,11 +859,11 @@ with tab_verify:
                     ).add_to(m_verify)
 
             apply_overlay_hide(m_verify)
+            # --- THE FIX: USE CONTAINER WIDTH RE-ENABLED ---
             st_folium(m_verify, use_container_width=True, height=700, key=f"verify_map_{st.session_state['map_key']}_{valid_date_formatted}_{custom_issue_str}_{st.session_state['hide_overlays']}")
 
         with col_right_v:
             if st.button("💾 Save Verified Outlook", type="primary", use_container_width=True):
-                # --- NEW: SAVE RAW TIER DATA INSTEAD OF AVERAGES ---
                 rows_to_save = []
                 for p, stats in results.items():
                     rows_to_save.append({
@@ -922,7 +931,8 @@ with tab_spc:
             except:
                 pass
     
-    col_map_spc, col_right_spc = st.columns([5, 1])
+    # --- THE FIX: BUMPER COLUMNS TO CONSTRAIN THE WIDTH ---
+    col_spacer_l_spc, col_map_spc, col_right_spc, col_spacer_r_spc = st.columns([1, 5, 1.5, 1])
     
     with col_map_spc:
         m_spc = folium.Map(location=map_center, zoom_start=zoom, tiles=None)
@@ -961,6 +971,7 @@ with tab_spc:
                 st.info(f"🟢 No active {spc_view_hazard} areas were found in the official SPC outlook for this date.")
 
         apply_overlay_hide(m_spc)
+        # --- THE FIX: USE CONTAINER WIDTH RE-ENABLED ---
         st_folium(m_spc, use_container_width=True, height=700, key=f"spc_map_{st.session_state['map_key']}_{valid_date_formatted}_{spc_view_hazard}_{map_theme}_{st.session_state['hide_overlays']}")
 
     with col_right_spc:
