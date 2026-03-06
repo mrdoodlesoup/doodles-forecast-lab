@@ -670,7 +670,7 @@ with tab_active:
 
         map_signature = f"create_map_{st.session_state['map_key']}_{display_hazard_title}_{valid_date_formatted}_{map_theme}_{custom_issue_str}_{st.session_state['hide_overlays']}"
         
-        # --- THE FIX: USE CONTAINER WIDTH RE-ENABLED ---
+        # --- THE FIX: USE CONTAINER WIDTH RE-ENABLED INSIDE BUMPERS ---
         output_create = st_folium(m_create, use_container_width=True, height=700, key=map_signature)
 
     with col_buttons:
@@ -859,7 +859,7 @@ with tab_verify:
                     ).add_to(m_verify)
 
             apply_overlay_hide(m_verify)
-            # --- THE FIX: USE CONTAINER WIDTH RE-ENABLED ---
+            # --- THE FIX: USE CONTAINER WIDTH RE-ENABLED INSIDE BUMPERS ---
             st_folium(m_verify, use_container_width=True, height=700, key=f"verify_map_{st.session_state['map_key']}_{valid_date_formatted}_{custom_issue_str}_{st.session_state['hide_overlays']}")
 
         with col_right_v:
@@ -945,6 +945,7 @@ with tab_spc:
             font-size: 18px; font-weight: bold; text-align: center; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
             {spc_title_prefix} VALID {valid_date_formatted}
             {spc_issue_str}
+            <br><span style='font-size: 14px; color: #ffcc00; font-weight: bold;'>⚠️ EXPERIMENTAL AND NOT SPC ⚠️</span>
             </div>
         '''
         m_spc.get_root().html.add_child(folium.Element(title_html_spc))
@@ -971,7 +972,7 @@ with tab_spc:
                 st.info(f"🟢 No active {spc_view_hazard} areas were found in the official SPC outlook for this date.")
 
         apply_overlay_hide(m_spc)
-        # --- THE FIX: USE CONTAINER WIDTH RE-ENABLED ---
+        # --- THE FIX: USE CONTAINER WIDTH RE-ENABLED INSIDE BUMPERS ---
         st_folium(m_spc, use_container_width=True, height=700, key=f"spc_map_{st.session_state['map_key']}_{valid_date_formatted}_{spc_view_hazard}_{map_theme}_{st.session_state['hide_overlays']}")
 
     with col_right_spc:
