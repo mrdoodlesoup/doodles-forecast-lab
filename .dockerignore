@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.git/
+.github/
+doodles_users.json
+history_*.csv
+.streamlit/secrets.toml
